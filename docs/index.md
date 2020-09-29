@@ -42,3 +42,7 @@
 ### **9** [Terraform docs examples](https://github.com/terraform-google-modules/docs-examples)
 
     https://github.com/terraform-google-modules/docs-examples
+
+### **10** CI-CD Google cloud platform
+
+    https://cloud.google.com/docs/ci-cd

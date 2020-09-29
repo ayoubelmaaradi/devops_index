@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="$PROJECT_DIR$/.." vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Temp" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/continuous-deployment-on-kubernetes" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/croc-hunter" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/gke-monitoring-tutorial" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/gke-networking-demos" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/gke-stateful-applications-demo" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/gke-terraform-generator" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/jenkins-integration-samples" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/kubernetes-ci-cd" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/kubernetes-cicd" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/kubernetes-engine-samples" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/kubernetes-workshops" vcs="Git" />
+  </component>
+</project>
