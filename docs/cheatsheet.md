@@ -29,3 +29,9 @@ Get fronend ip Loadbalacer
 Creating a repo in cloud source code
 
     gcloud source repos create default
+
+Create private registry
+
+    kubectl create secret docker-registry myregistrykey         --docker-server=DUMMY_SERVER \
+        --docker-username=DUMMY_USERNAME --docker-password=DUMMY_DOCKER_PASSWORD \
+        --docker-email=DUMMY_DOCKER_EMAIL
