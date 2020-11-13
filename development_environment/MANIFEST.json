@@ -1,0 +1,34 @@
+{
+ "collection_info": {
+  "namespace": "robertdebock",
+  "name": "development_environment",
+  "version": "2.0.4",
+  "authors": [
+   "Robert de Bock"
+  ],
+  "readme": "README.md",
+  "tags": [
+   "development",
+   "molecule",
+   "ara"
+  ],
+  "description": "Install everything you need to develop Ansible roles.",
+  "license": [
+   "Apache-2.0"
+  ],
+  "license_file": null,
+  "dependencies": null,
+  "repository": "https://github.com/robertdebock/ansible-development-environment",
+  "documentation": "https://github.com/robertdebock/ansible-development-environment/blob/master/README.md",
+  "homepage": "https://robertdebock.nl",
+  "issues": "https://github.com/robertdebock/ansible-development-environment/issues"
+ },
+ "file_manifest_file": {
+  "name": "FILES.json",
+  "ftype": "file",
+  "chksum_type": "sha256",
+  "chksum_sha256": "d77d0d5e0f425b061396d0f602649d28b9c846e0f73699830a062a10c42cb12b",
+  "format": 1
+ },
+ "format": 1
+}

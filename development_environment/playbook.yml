@@ -1,0 +1,28 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: setup an ansible development environment
+  hosts: all
+  become: yes
+  gather_facts: no
+
+  roles:
+    - robertdebock.bootstrap
+    - robertdebock.update
+    - robertdebock.fail2ban
+    - robertdebock.common
+    - robertdebock.buildtools
+    - robertdebock.epel
+    - robertdebock.python_pip
+    - robertdebock.docker
+    - robertdebock.users
+    - robertdebock.postfix
+    - robertdebock.vagrant
+    - robertdebock.investigate
+    - robertdebock.ansible
+    - robertdebock.ansible_lint
+    - robertdebock.molecule
+    - robertdebock.ara
+    - robertdebock.ruby
+    - robertdebock.travis
+    - robertdebock.git
+    - robertdebock.atom

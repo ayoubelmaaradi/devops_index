@@ -1,4 +1,5 @@
-
+### GCP service 
+	https://cloud.google.com/terms/services
 
 
 ### **1** [CD to Google cloud kubrenetes](https://cloud.google.com/solutions/continuous-delivery-jenkins-kubernetes-engine)
@@ -46,3 +47,10 @@
 ### **10** CI-CD Google cloud platform
 
     https://cloud.google.com/docs/ci-cd
+### **11** GCP solutions architect
+
+	https://gcp.solutions/diagram/dt-jenkins
+
+### Notes gcp architect
+
+	https://github.com/grantcarthew/notes-google-cloud-architect
