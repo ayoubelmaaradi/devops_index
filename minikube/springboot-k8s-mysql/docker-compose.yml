@@ -1,0 +1,32 @@
+
+version: '3.7'
+
+services:
+  mysql:
+    image: mysql
+    environment:
+      - MYSQ_ROOT_PASSWORD=pasword
+      - MYSQL_DATABASE=spring
+      - MYSQL_USER=spring
+      - MYSQL_PASSWORD=spring
+    ports:
+      - "3306:3306"
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DB_HOST=mysql
+      - DB_PASSWORD=spring
+      - DB_USERNAME=spring
+      - DB_NAME=spring
+    depends_on:
+      - mysql
+  nginx:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    ports:
+      - "8585:80"
+    depends_on:
+      - api
