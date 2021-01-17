@@ -1,0 +1,38 @@
+# ============================ BASIC INGRESS ============================
+# apiVersion: extensions/v1beta1
+# kind: Ingress
+# metadata:
+#   name: nginx
+#   annotations:
+#     kubernetes.io/ingress.global-static-ip-name: "kubernetes-ingress"
+# spec:
+#   backend:
+#     serviceName: nginx
+#     servicePort: 80
+# ===============================================================================
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-service
+  annotations:
+    #  kubernetes.io/ingress.class: 'nginx'
+    #  nginx.ingress.kubernetes.io/use-regex: 'true'
+    #  nginx.ingress.kubernetes.io/rewrite-target: /$1
+    # ip address reserved by creating : gcloud compute addresses create kubernetes-ingress --global
+    kubernetes.io/ingress.global-static-ip-name: "kubernetes-ingress"
+    # UPDATE THIS LINE ABOVE
+spec:
+  rules:
+    - host: ayoub.34.117.11.11.xip.io # == kubernetes-ingress
+      http:
+        paths:
+          - path: /
+            # UPDATE THIS LINE ABOVE
+            backend:
+              serviceName: nginx # Node Port Service
+              servicePort: 80
+          #  - path: /api
+          #    # UPDATE THIS LINE ABOVE
+          #    backend:
+          #      serviceName: springboot-k8s-mysql
+          #      servicePort: 8080
