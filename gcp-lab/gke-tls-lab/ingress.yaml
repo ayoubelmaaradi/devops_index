@@ -9,7 +9,7 @@ metadata:
     type: endpoints-app
 spec:
   rules:
-  - host: api.endpoints.[MY-PROJECT].cloud.goog
+  - host: api.endpoints.lab-gcp-301223.cloud.goog
     http:
       paths:
       - backend:

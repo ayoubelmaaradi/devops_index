@@ -33,9 +33,7 @@ pipeline{
         }
           stage('Building docker images') {
             steps {
-                sh 'node --version'
                 sh 'npm build --prod'
-
             }
         }
     }

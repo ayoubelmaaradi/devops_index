@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: tls-ayoub-ingress
+  annotations:
+     kubernetes.io/ingress.global-static-ip-name: "kubernetes-ingress"
+  namespace: default
+
+spec:
+  tls:
+  - hosts:
+      - ayoub.34.117.11.11.xip.io
+    secretName: tls-secret
+  rules:
+  - host: ayoub.34.117.11.11.xip.io
+    http:
+      paths:
+        - path: /
+            # UPDATE THIS LINE ABOVE
+          backend:
+            serviceName: nginx
+            servicePort: 80

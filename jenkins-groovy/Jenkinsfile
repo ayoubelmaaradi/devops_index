@@ -1,0 +1,66 @@
+pipeline{
+      environment {
+        PROJECT_ID = '<YOUR_PROJECT_ID>'
+        CLUSTER_NAME = '<YOUR_CLUSTER_NAME>'
+        LOCATION = '<YOUR_CLUSTER_LOCATION>'
+        CREDENTIALS_ID = '<YOUR_CREDENTIAS_ID>'
+    }
+    gv = load "helper.groovy"
+    
+    agent any
+       stages {
+        stage('Building backend') {
+            agent {
+                docker { image 'maven:3-alpine' }
+            }
+            steps {
+                sh 'mvn --version' 
+                mavenBuild()
+            }
+        }
+        stage('Building Front-end') {
+            agent {
+                docker { image 'node:14-alpine' }
+            }
+            steps {
+                sh 'node --version'
+                sh 'npm build --prod'
+
+            }
+        }
+          stage('Building docker images') {
+            steps {
+                sh 'node --version'
+                sh 'npm build --prod'
+
+            }
+        }
+    }
+
+
+    post{
+        always{
+            echo "========always========"
+        }
+        success{
+            echo "========pipeline executed successfully ========"
+        }
+        failure{
+            echo "========pipeline execution failed========"
+        }
+    }
+
+    stage('Deploy to GKE') {
+        steps{
+            step([
+            $class: 'KubernetesEngineBuilder',
+            projectId: env.PROJECT_ID,
+            clusterName: env.CLUSTER_NAME,
+            location: env.LOCATION,
+            manifestPattern: 'manifest.yaml',
+            credentialsId: env.CREDENTIALS_ID,
+            verifyDeployments: true])
+        }
+    }
+ 
+}

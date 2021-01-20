@@ -1,0 +1,218 @@
+#!/usr/bin/env groovy
+
+properties([
+    buildDiscarder(
+        logRotator(
+            numToKeepStr: '10'
+        )
+    )
+])
+
+def config = [
+    nexus : [
+        repository : 'https://nexus.agilefabric.fr.carrefour.com/repository/supplatine-charts'
+    ],
+    npm : [
+        configID : 'b50a94d8-f641-48ba-b123-0caa1e3b47c9'
+    ],
+    docker : [
+        registry : 'docker-registry.agilefabric.fr.carrefour.com',
+        imageName : 'supplatine/supplatine-app-admin'
+    ],
+    deploymentJob : [
+        name :  '../supplatine-deployment/master'
+    ]
+]
+
+def appVars = [
+    commitId : null,
+    pom : null,
+    appVersion: null,
+    generatedAppImage : null
+]
+
+node('ci-slave-docker') {
+
+    try {
+        checkoutWithTags()
+        def jenkinsUserAndGroup = sh(script: 'echo "$(id -u):$(id -g)"', returnStdout: true).trim()
+
+        docker.image('jhipster/jhipster:v6.8.0').inside('-u root -e MAVEN_OPTS="-Duser.home=./" -v /datas/maven/repo:/datas/maven/repo') {
+            try {
+                stage('Build & Tests') {
+                    prepareAndBuildApp(config.npm, env.BRANCH_NAME, appVars)
+                }
+
+                if (env.BRANCH_NAME == 'develop' || isPullRequest()) {
+                    stage('Sonar analysis') {
+                        sonarAnalysis(appVars.pom, env.BRANCH_NAME)
+                    }
+                    stage('Quality gate') {
+                        withSonarQubeEnv('Sonar Agile Fabric') {
+                            timeout(time: 1, unit: 'HOURS') {
+                                waitForQualityGate abortPipeline: true
+                            }
+                        }
+                    }
+                }
+            } finally {
+                sh "chown -R ${jenkinsUserAndGroup} ."
+                junit '**/target/test-results/test/TEST-*.xml'
+            }
+        }
+
+        stage('Docker - Build image') {
+            appVars.generatedAppImage = buildImage(config.docker, appVars.commitId)
+        }
+
+        if (shouldPublishApp(env.BRANCH_NAME)) {
+            stage('Docker - Push image') {
+                pushImageAndTag(appVars.generatedAppImage, config.docker.registry, appVars.appVersion)
+            }
+        }
+
+        if (shouldPublishApp(env.BRANCH_NAME)) {
+            stage ('Helm - Package & publish chart') {
+                packageChart(config.nexus.repository, config.docker.registry, appVars.appVersion)
+            }
+            if (env.BRANCH_NAME == 'develop') {
+                stage ('Continuous Deployment - Deploying - SNAPSHOT') {
+                    launchDeployment(config.deploymentJob.name, appVars.appVersion, 'dev')
+                }
+            }
+        }
+    } finally {
+        // clean generated image locally
+        if (appVars.generatedAppImage && appVars.generatedAppImage.id) {
+            sh "docker rmi -f \$(docker images -q ${appVars.generatedAppImage.id})"
+        }
+        cleanWs(patterns:[
+            [pattern:'node_modules/**', type:'EXCLUDE'],
+            [pattern:'node/**', type:'EXCLUDE']
+        ], deleteDirs: true)
+    }
+}
+
+
+def checkoutWithTags() {
+    checkout([
+        $class: 'GitSCM',
+        branches: [[name: 'refs/heads/'+env.BRANCH_NAME]],
+        extensions: [[$class: 'CloneOption', noTags: false, shallow: false, depth: 0, reference: '']],
+        userRemoteConfigs: scm.userRemoteConfigs,
+    ])
+}
+
+/**
+* Determine if the generated artifact should be published according to the current git branch name.
+* Return true only for 'develop', 'release' and 'hotfix' branches.
+*/
+def shouldPublishApp(branchName) {
+    def shouldPublish =  branchName == 'develop' || branchName.startsWith('release/') || branchName.startsWith('hotfix/')
+    return shouldPublish
+}
+
+def isPullRequest() {
+    return env.CHANGE_ID != null
+}
+
+def prepareAndBuildApp(npmConfig, branchName, appVars) {
+    withMaven(mavenSettingsConfig: 'AF_MavenSettings',
+        options: [artifactsPublisher(disabled: true)],
+        publisherStrategy: 'EXPLICIT')
+    {
+        appVars.pom = readMavenPom file: 'pom.xml'
+        appVars.commitId = getShortCommitId()
+        appVars.appVersion = defineAppVersion(appVars.pom.version, appVars.commitId, branchName, getGitCurrentVersionTag())
+        // replace the version in pom.xml by the app version
+        sh "sed -i '0,/<version>${appVars.pom.version}/s//<version>${appVars.appVersion}/' pom.xml"
+        withNPM(npmrcConfig: npmConfig.configID) {
+            sh 'chmod +x ./mvnw'
+            sh './mvnw clean verify -Pprod'
+        }
+    }
+}
+
+def getShortCommitId() {
+    return sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+}
+
+def getGitCurrentVersionTag() {
+    def tag = sh(script: 'git describe --tags --exact-match || echo "noTag"', returnStdout: true).trim()
+    if (tag ==~ /v[\d\.]+/) {
+        return tag
+    }
+    return null
+}
+
+/**
+* Return the version that should be used to tag the application.
+* It is based on the version in the pom.xml, the current branch and its tag, so:
+*   - for release or hotfix branch with a git tag like 'v.x.x.x' => return the pom version
+*   - for release or hotfix branch without a git tag like 'v.x.x.x' => return <pom version>-rc.<build number>
+*   - otherwise => return <pom version>-<commitId>
+*/
+def defineAppVersion(pomVersion, commitId, branchName, gitVersionTag) {
+    def appVersion = "${pomVersion}-${commitId}"
+    if (branchName.startsWith('release/') || branchName.startsWith('hotfix/')) {
+        if(gitVersionTag != null && !gitVersionTag.isEmpty()) {
+            appVersion = pomVersion
+        } else {
+            appVersion = "${pomVersion}-rc.${env.BUILD_NUMBER}"
+        }
+    }
+    return appVersion
+}
+
+def sonarAnalysis(pom, branchName) {
+    withMaven(mavenSettingsConfig: 'AF_MavenSettings') {
+        withSonarQubeEnv('Sonar Agile Fabric') {
+            def mvnSonarArgs = ''
+            if (branchName == 'develop'){
+                mvnSonarArgs = " -Dsonar.projectVersion=\'${pom.version}\'"
+            } else {
+                def sonarProps = readProperties(file: './sonar-project.properties')
+                mvnSonarArgs = "-Dsonar.projectVersion=\'${branchName}-${pom.version}\'" +
+                    " -Dsonar.projectKey=\'${sonarProps['sonar.projectKey']}-SNAPSHOT\'" +
+                    " -Dsonar.projectName=\'${sonarProps['sonar.projectName']} - SNAPSHOT\'"
+            }
+            sh "./mvnw initialize sonar:sonar ${mvnSonarArgs}"
+        }
+    }
+}
+
+def packageChart(nexusRepos, dockerRegistry, appVersion) {
+    docker.withRegistry("https://${dockerRegistry}", 'portus-credentials') {
+        docker.image('docker-registry.agilefabric.fr.carrefour.com/ingelog/tools/helm-kubectl:v3.2.0').inside() {
+            sh "mkdir -p ${WORKSPACE}/packages-charts"
+            sh "sed -i -e 's/version:.*/version: ${appVersion}/' chart/supplatine-app-admin/Chart.yaml"
+            sh "sed -i -e 's/appVersion:.*/appVersion: ${appVersion}/' chart/supplatine-app-admin/Chart.yaml"
+            sh "helm package chart/supplatine-app-admin/ --destination ${WORKSPACE}/packages-charts"
+            sh "helm repo index packages-charts --url ${nexusRepos}  --merge ${WORKSPACE}/packages-charts/index.yaml"
+            withCredentials([usernamePassword(credentialsId: 'nexus-cred-helm', passwordVariable: 'NEXUS_PASSWORD', usernameVariable: 'NEXUS_USERNAME')])
+            {
+                sh "curl -k -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} --upload-file ${WORKSPACE}/packages-charts/supplatine-app-admin-${appVersion}.tgz  ${nexusRepos}/supplatine-app-admin-${appVersion}.tgz"
+            }
+        }
+    }
+}
+
+def buildImage(dockerConfig, commitId) {
+    sh "cp -R src/main/docker/* target/"
+    return docker.build("${dockerConfig.registry}/${dockerConfig.imageName}:${commitId}", 'target/')
+}
+
+def pushImageAndTag(image, dockerRegistry, tag) {
+    docker.withRegistry("https://${dockerRegistry}", 'portus-credentials') {
+        image.push()
+        image.push(tag)
+    }
+}
+
+def launchDeployment(deployJob, appVersion, env) {
+    build job: deployJob, quietPeriod: 1, wait: false, parameters: [
+        [$class: 'StringParameterValue', name: 'APP_NAME', value: 'supplatine-app-admin'],
+        [$class: 'StringParameterValue', name: 'APP_VERSION', value: appVersion],
+        [$class: 'StringParameterValue', name: 'APP_ENV', value: env]
+    ]
+}

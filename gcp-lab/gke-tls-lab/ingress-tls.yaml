@@ -11,10 +11,10 @@ metadata:
 spec:
   tls:
   - hosts:
-    - api.endpoints.[MY-PROJECT].cloud.goog
+    - api.endpoints.lab-gcp-301223.cloud.goog
     secretName: esp-tls
   rules:
-  - host: api.endpoints.[MY-PROJECT].cloud.goog
+  - host: api.endpoints.lab-gcp-301223.cloud.goog
     http:
       paths:
       - backend:

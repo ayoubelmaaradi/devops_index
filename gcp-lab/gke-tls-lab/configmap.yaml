@@ -5,4 +5,4 @@ metadata:
   labels:
     type: endpoints-app
 data:
-  JWT_AUDIENCE: "api.endpoints.[MY-PROJECT].cloud.goog"
+  JWT_AUDIENCE: "api.endpoints.lab-gcp-301223.cloud.goog"

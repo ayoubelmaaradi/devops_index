@@ -4,16 +4,16 @@ info:
   description: "A simple Google Cloud Endpoints API example."
   title: "Endpoints Example"
   version: "1.0.0"
-host: "api.endpoints.[MY-PROJECT].cloud.goog"
+host: "api.endpoints.lab-gcp-301223.cloud.goog"
 # [END add_project]
 # basePath prefixes all resource paths 
 basePath: "/"
 # Default to route all calls such as /docs and /healthz
 x-google-allow: all
 x-google-endpoints:
-- name: "api.endpoints.[MY-PROJECT].cloud.goog"
+- name: "api.endpoints.lab-gcp-301223.cloud.goog"
   allowCors: true
-  target: [MY-STATIC-IP]
+  target: "35.222.99.31"
 consumes:
 - "application/json"
 produces:
