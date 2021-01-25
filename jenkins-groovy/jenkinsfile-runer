@@ -1,0 +1,15 @@
+#!/usr/bin/bash
+list=$(ls)
+jenkinsfileispresent=0
+for item in list; do
+	if [[ "$item" == "Jenkinsfile" ]] && jenkinsfileispresent=1
+done
+
+if [[ -z "$1" && $jenkinsfileispresent -eq 1 ]]; then
+	docker run --rm -v $(pwd)/Jenkinsfile:/workspace/Jenkinsfile jenkins/jenkinsfile-runner
+
+else
+	docker run --rm -v $(pwd)/"$1":/workspace/Jenkinsfile jenkins/jenkinsfile-runner
+fi
+
+exit 0

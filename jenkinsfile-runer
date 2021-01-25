@@ -1,0 +1,27 @@
+#!/usr/bin/bash
+RED='\033[0;31m'
+GREEN='\033[0;32'
+NC='\033[0m' # No Color
+
+list=$(ls)
+jenkinsfileispresent=0
+for item in list; do
+	[[ "$item" == "Jenkinsfile" && -f "$item" ]] && jenkinsfileispresent=1
+done
+
+
+if [[ "$#" -eq 0 && "$jenkinsfileispresent" -ne 0 ]]; then
+	echo -e "${GREEN}No args.. using default .... Jenkinsfile is present${NC}"
+	docker run --rm -v $(pwd)/Jenkinsfile:/workspace/Jenkinsfile jenkins/jenkinsfile-runner
+
+elif [[ "$#" -eq 1 && -f "$1" ]]; then
+	echo "Provided file .... $1....... as Jenkinsfile"
+	docker run --rm -v $(pwd)/"$1":/workspace/Jenkinsfile jenkins/jenkinsfile-runner
+elif [[ ! -f "$1" && "$#" -eq 1 ]]; then
+	echo -e "${RED} Arg file Not found ${NC}"
+
+else
+	echo -e "${RED} No Jenkinsfile found and No args provided ${NC}"
+	exit 1
+fi
+
